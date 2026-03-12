@@ -50,5 +50,8 @@ jobs:
           A-COMMAND-TEST_RESULTS: "${{steps.a-command-test.outputs.result}}"
           PYTHON-TEST_RESULTS: "${{steps.python-test.outputs.result}}"
           PYTHON-TEST-WITH-SCORE_RESULTS: "${{steps.python-test-with-score.outputs.result}}"
+          SHEETS_CREDENTIALS: "${{secrets.SHEETS_CREDENTIALS}}"
+          SPREADSHEET_ID: 1PfT2-YuofZ_vumxCFj_hUo4M6Ri-VHJ7hHx3MoRpcF4
+          WORKSHEET_NAME: awesome-quotes
         with:
           runners: shout-test,a-command-test,python-test,python-test-with-score

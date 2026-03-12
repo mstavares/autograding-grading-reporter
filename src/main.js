@@ -1,6 +1,6 @@
 const core = require("@actions/core");
 const { ConsoleResults } = require("./console-results");
-const { NotifyClassroom } = require("./notify-classroom");
+const { PostResults } = require("./post-results");
 
 try {
   const runnerResults = core
@@ -14,7 +14,7 @@ try {
 
 
   ConsoleResults(runnerResults);
-  NotifyClassroom(runnerResults);
+  PostResults(runnerResults);
 
   if (runnerResults.some((r) => r.results.status === "fail")) {
     core.setFailed("Some tests failed.");
