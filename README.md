@@ -1,5 +1,13 @@
 ## GitHub Classroom Autograding Reporter
 
+###
+Atualização
+
+AUTHORS_AMOUNT: numero
+SHEETS_CREDENTIALS: base64 do ficheiro de credenciais da API da google
+SPREADSHEET_ID: ID da worksheet (não esquecer de partilhar acessso de editor com a conta google)
+WORKSHEET_NAME: nome da folha
+
 ### Overview
 **GitHub Classroom Autograding Reporter** is a plugin for GitHub Classroom's Autograder. Use it to report the results of the test execution to students and GitHub Classroom.
 

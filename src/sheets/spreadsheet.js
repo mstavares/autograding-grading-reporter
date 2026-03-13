@@ -90,8 +90,9 @@ exports.GetRow = (spreadSheetId, worksheetTitle, criteria, callback) => {
       const rowsFound = rows.filter(
         row => row[criteria.title] && row[criteria.title].toLowerCase() === criteria.instance.toString().toLowerCase()
       )
-      console.log(`found ${rowsFound}`)
+      console.log(`found ${rowsFound} # ${rowsFound.length}`)
       callback.success(rowsFound)
+      // TODO lidar com o facto de nao encontrar registos
     },
     failure: (err) => callback.failure(err)
   })

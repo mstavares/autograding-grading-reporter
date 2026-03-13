@@ -1,122 +1,37 @@
-const { GetAuthors } = require('./authors')
 const { GetRow } = require('../sheets/spreadsheet')
 
-
-exports.Auth = async (callback) => {
+exports.Auth = async (authors, callback) => {
   try {
-    const authors = GetAuthors();
-    const rowsFound = await getRepositoryInstances(process.env.GITHUB_REPOSITORY_ID);
-
-    if (rowsFound.lenght == 0) {
-      console.log('vou registar o repositorio para estes authors')
-      insertRepositoryIdForAuthors(process.env.GITHUB_REPOSITORY_ID, authors)
-      console.log("tudo ok, registado")
-    } else if (rowsFound.lenght == authors.lenght) {
-      console.log("vou validar a pertença do repositorio")
-      // TODO validar que repositorio pertence aos autores
-    } else {
-      callback.failure("Ocorreu um erro durante a autenticacao");
-      return;
+    if (authors.length > process.env.AUTHORS_AMOUNT) {
+      callback.failure(`Só podem existir no máximo ${process.env.AUTHORS_AMOUNT} alunos no ficheiro AUTHORS.txt`);
+      return
     }
 
-    callback.success("Autenticacao concluida");
+    const repositoryUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}`
+    const rowsFound = await getRepositoryInstances(repositoryUrl);
+
+    if (rowsFound.length == 0) {
+      console.log('vou registar o repositorio para estes authors')
+      insertRepositoryIdForAuthors(repositoryUrl, authors)
+      console.log("tudo ok, registado")
+    } else if (rowsFound.length == authors.length) {
+      console.log("vou validar a pertença do repositorio")
+      for (const numero of rowsFound.map(row => row.numero)) {
+        console.log(`A validar ${numero}`)
+        if (!authors.includes(numero)) {
+          callback.failure(`Erro a autenticar ${numero}`)
+          return
+        }
+      }
+    } else {
+      callback.failure("Ocorreu um erro durante a autenticacao")
+      return
+    }
+    console.log("Autenticacao concluida")
+    callback.success(rowsFound)
   } catch (err) {
     callback.failure(err);
   }
-
-  // TODO validar se a quantidade de authors bate certa com a variavel de ambiente
-  // necessario par definir quantos alunos tem cada
-
-  /*
-  const rowsFound = await getRepositoryInstances(process.env.GITHUB_REPOSITORY_ID)
-
-  if (rowsFound.lenght == 0) {
-    console.log('vou registar o repositorio para estes authors')
-    insertRepositoryIdForAuthors(process.env.GITHUB_REPOSITORY_ID, authors)
-    console.log("tudo ok, registado")
-  } else if (rowsFound.lenght == authors.length) {
-    console.log("vou validar a pertença do repositorio")
-    // TODO validar que repositorio pertence aos autores
-  } else {
-    callback.failure('Ocorreu um erro durante a autenticacao')
-  }
-    */
-
-  /*
-  GetRow(
-    process.env.SPREADSHEET_ID,
-    process.env.WORKSHEET_NAME,
-    { title: 'repositorio', instance: process.env.GITHUB_REPOSITORY_ID },
-    {
-      success: async (row) => {
-        console.log(row)
-        /*
-        console.log(`repositorio ${row.repositorio}`)
-        if (row.repositorio == null) {
-          row.repositorio = process.env.GITHUB_REPOSITORY_ID
-          await row.save()
-        } else if (row.repositorio != process.env.GITHUB_REPOSITORY_ID) {
-          callback.failure(`Erro de authenticacao, id do repositorio errado ${process.env.GITHUB_REPOSITORY_ID}`)
-          return
-        }      
-          
-      },
-      failure: (error) => callback.failure(error)
-    }
-  )
-  */
-
-  /*
-  const authorsData = authors.map(author => {
-    GetRow(
-      process.env.SPREADSHEET_ID,
-      process.env.WORKSHEET_NAME,
-      { title: 'numero', instance: author },
-      {
-        success: async (row) => {
-          return {
-            ...author,
-            row
-          }
-          /*
-          console.log(row)
-          console.log(`repositorio ${row.repositorio}`)
-          if (row.repositorio == null) {
-            row.repositorio = process.env.GITHUB_REPOSITORY_ID
-            await row.save()
-          } else if (row.repositorio != process.env.GITHUB_REPOSITORY_ID) {
-            callback.failure(`Erro de authenticacao, id do repositorio errado ${process.env.GITHUB_REPOSITORY_ID}`)
-            return
-          }
-            
-        },
-        failure: (error) => callback.failure(error)
-      }
-    )
-  })
-
-  if (authors)
-  */
-
-  
-
-  /*
-  GetWorksheet(process.env.SPREADSHEET_ID, process.env.WORKSHEET_NAME, {
-    success: async (worksheet) => {
-      //await worksheet.loadCells('A1:Z1000')
-
-      /*
-      GetAllRows(process.env.SPREADSHEET_ID, process.env.WORKSHEET_NAME, {
-        success: (rows) => {
-          const studentNumbers = rows[0]['_sheet'].headerValues.indexOf(classDay)
-        },
-        failure: (error) => callback.failure(error)
-      })
-        *
-    },
-    failure: (error) => callback.failure(error)
-  })
-    */
 }
 
 const getRepositoryInstances = (repositoryId) => {
@@ -135,24 +50,15 @@ const getRepositoryInstances = (repositoryId) => {
 
 const insertRepositoryIdForAuthors = (repositoryId, authors) => {
   authors.forEach(async author => {
-    const info = getAuthorInfo(author)
-    info.repositorio = repositoryId
-    await info.save()
-    /*
-    GetRow(
-      process.env.SPREADSHEET_ID,
-      process.env.WORKSHEET_NAME,
-      { title: 'numero', instance: author },
-      {
-        success: async (row) => {
-          row.repositorio = repositoryId
-          await row.save()           
-        },
-        failure: (error) => callback.failure(error)
-      }
-    )
-      */
-
+    try {
+      const info = await getAuthorInfo(author)
+      console.log(`info: ${info}`)
+      info.repositorio = repositoryId
+      await info.save()
+    } catch (err) {
+      console.error(err)
+      //callback.failure(err);
+    }
   })
 }
 
@@ -163,7 +69,7 @@ const getAuthorInfo = (author) => {
       process.env.WORKSHEET_NAME,
       { title: 'numero', instance: author },
       {
-        success: (found) => resolve(found),
+        success: (found) => resolve(found[0]),
         failure: (error) => reject(error)
       }
     )
