@@ -1,6 +1,11 @@
 name: Release
 on:
   workflow_dispatch:
+    inputs:
+      releaseName:
+        description: "Name of release, e.g. v1, v2 etc"
+        required: true
+        type: string
 
 jobs:
   release:
@@ -8,27 +13,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: releases/v1
           fetch-depth: 0
+
       - name: Git config
         run: |
           git config user.name autograding-release-bot
           git config user.email autograding-release-bot+education@github.com
-      - name: Run build and commit to releases/v1
+
+      - name: Create release branch
         run: |
-          git reset --hard origin/main
+          git fetch origin
+          git checkout -b release/${{ inputs.releaseName }} origin/main
+
+      - name: Run build and commit to release/${{ inputs.releaseName }}
+        run: |
           npm install --silent
           npm run build
           git add dist/
-          git commit -m "Release v1"
-          git push -f origin releases/v1
+          git commit -m "Release ${{ inputs.releaseName }}" || echo "Nothing to commit"
+          git push -f origin release/${{ inputs.releaseName }}
       - name: Tag and push v1
         run: |
-          git tag -f v1 # Since we are already on releases/v1 we don't need a ref. This will tag HEAD of releases/v1.
-          git push origin v1 --force
+          git tag -f ${{ inputs.releaseName }}
+          git push origin ${{ inputs.releaseName }} --force
       - name: Create Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          tag: v1
+          tag: ${{ inputs.releaseName }}
           allowUpdates: true

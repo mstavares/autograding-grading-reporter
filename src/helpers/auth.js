@@ -55,7 +55,7 @@ const insertRepositoryIdForAuthors = (repositoryId, authors) => {
   authors.forEach(async author => {
     try {
       const info = await getAuthorInfo(author)
-      console.log(`info: ${info}`)
+      console.log(`info: ${info.numero} - ${info.nome}`)
       info.repositorio = repositoryId
       await info.save()
     } catch (err) {

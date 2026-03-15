@@ -12,7 +12,6 @@ exports.GetSpreadsheet = (spreadSheetId, callback) => {
 
 exports.GetAllWorksheets = (spreadsheetId, callback) => {
   const spreadsheet = new GoogleSpreadsheet(spreadsheetId)
-  console.log(spreadsheet)
 
   spreadsheet.useServiceAccountAuth(creds, function (err) {
     if (err) {
@@ -27,7 +26,6 @@ exports.GetAllWorksheets = (spreadsheetId, callback) => {
       }
 
       if (info && info.worksheets) {
-        console.log('sucesso')
         callback.success(info.worksheets)
       } else {
         callback.failure('Erro na folha de configurações')
@@ -46,7 +44,6 @@ exports.GetWorksheet = (spreadsheetId, worksheetTitle, callback) => {
       if(foundSheet) callback.success(foundSheet); else callback.failure('Folha ' + worksheetTitle + ' não encontrada')
     } else {
       console.log(`ERRO!! ${spreadsheet}, ${worksheetTitle}`)
-      callback.failure('Erro na folha de configrações')
     }
   }());
 }
@@ -85,12 +82,9 @@ exports.GetRow = (spreadSheetId, worksheetTitle, criteria, callback) => {
 exports.GetRow = (spreadSheetId, worksheetTitle, criteria, callback) => {
   this.GetAllRows(spreadSheetId, worksheetTitle, {
     success: (rows) => {
-      console.log(criteria)
-      console.log(rows)
       const rowsFound = rows.filter(
         row => row[criteria.title] && row[criteria.title].toLowerCase() === criteria.instance.toString().toLowerCase()
       )
-      console.log(`found ${rowsFound} # ${rowsFound.length}`)
       callback.success(rowsFound)
       // TODO lidar com o facto de nao encontrar registos
     },
