@@ -10,6 +10,9 @@ exports.Auth = async (authors, callback) => {
     const repositoryUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}`
     const rowsFound = await getRepositoryInstances(repositoryUrl);
 
+    console.log(authors)
+    console.log(repositoryUrl)
+
     if (rowsFound.length == 0) {
       console.log('vou registar o repositorio para estes authors')
       insertRepositoryIdForAuthors(repositoryUrl, authors)

@@ -16,6 +16,9 @@ exports.PostResults = async function PostResults(runnerResults) {
 
       const totalScore = testResults.reduce((sum, test) => sum + test.score, 0)
 
+      console.log(totalScore)
+      console.log(testResults)
+
       for (const info of authorsInfo) {
         if (info.total && info.total > totalScore) return
         info.total = totalScore
