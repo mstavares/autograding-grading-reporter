@@ -6,7 +6,7 @@ exports.PostResults = async function PostResults(runnerResults) {
   const authors = GetAuthors()
 
   Auth(authors, {
-    success: (authorsInfo) => {
+    success: async (authorsInfo) => {
       const testResults = runnerResults.map(result => ({
         testName: result.runner,
         score: result.results.status == "pass" 
@@ -27,7 +27,7 @@ exports.PostResults = async function PostResults(runnerResults) {
           info[test.testName] = test.score
         })
 
-        info.save()
+        await info.save()
       }
     },
     failure: (error) => console.error(error)
