@@ -69,7 +69,7 @@ const getAuthorInfo = (author) => {
       process.env.WORKSHEET_NAME,
       { title: 'numero', instance: author },
       {
-        success: (found) => resolve(found[0]),
+        success: (found) => found[0] ? resolve(found[0]) : reject(`Nao encontrei o author: ${author}`),
         failure: (error) => reject(error)
       }
     )
