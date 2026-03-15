@@ -3,9 +3,6 @@ const { GetAuthors } = require("./helpers/authors")
 const { Auth } = require("./helpers/auth")
 
 exports.PostResults = async function PostResults(runnerResults) {
-  
-
-  /*
   const authors = GetAuthors()
 
   Auth(authors, {
@@ -35,6 +32,4 @@ exports.PostResults = async function PostResults(runnerResults) {
     },
     failure: (error) => console.error(error)
   })
-    */
-
 };
