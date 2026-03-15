@@ -54,7 +54,7 @@ const getRepositoryInstances = (repositoryId) => {
 }
 
 const insertRepositoryIdForAuthors = async (repositoryId, authors) => {
-  authors.forEach(async author => {
+  for (const author of authors) {
     try {
       const info = await getAuthorInfo(author)
       console.log(`info: ${info.numero} - ${info.nome}`)
@@ -64,7 +64,7 @@ const insertRepositoryIdForAuthors = async (repositoryId, authors) => {
       console.error(err)
       //callback.failure(err);
     }
-  })
+  }
 }
 
 const getAuthorInfo = (author) => {
