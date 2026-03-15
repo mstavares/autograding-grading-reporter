@@ -15,7 +15,7 @@ exports.Auth = async (authors, callback) => {
 
     if (rowsFound.length == 0) {
       console.log('vou registar o repositorio para estes authors')
-      insertRepositoryIdForAuthors(repositoryUrl, authors)
+      await insertRepositoryIdForAuthors(repositoryUrl, authors)
       console.log("tudo ok, registado")
     } else if (rowsFound.length == authors.length) {
       console.log("vou validar a pertença do repositorio")
@@ -51,7 +51,7 @@ const getRepositoryInstances = (repositoryId) => {
   })
 }
 
-const insertRepositoryIdForAuthors = (repositoryId, authors) => {
+const insertRepositoryIdForAuthors = async (repositoryId, authors) => {
   authors.forEach(async author => {
     try {
       const info = await getAuthorInfo(author)
