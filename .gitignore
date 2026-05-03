@@ -1,1 +1,11 @@
 node_modules
+dist
+.claude
+package-lock.json
+
+# Environment variables (credentials)
+.env
+
+# Test artifacts
+coverage
+AUTHORS.txt
