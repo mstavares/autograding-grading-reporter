@@ -21,7 +21,7 @@ exports.PostResults = async function PostResults(runnerResults) {
 
       for (const info of authorsInfo) {
         if (info.total && info.total > totalScore) return
-        info.total = totalScore
+        //info.total = totalScore
 
         testResults.forEach(test => {
           info[test.testName] = test.score
@@ -30,6 +30,9 @@ exports.PostResults = async function PostResults(runnerResults) {
         await info.save()
       }
     },
-    failure: (error) => console.error(error)
+    failure: (error) => {
+      console.error(error)
+      core.setFailed(error.message)
+    }
   })
 };
