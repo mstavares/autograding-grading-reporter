@@ -27,6 +27,7 @@ exports.PostResults = async function PostResults(runnerResults) {
           info[test.testName] = test.score
         })
 
+        delete info.total
         await info.save()
       }
     },
