@@ -41,7 +41,7 @@ exports.PostResults = async function PostResults(runnerResults) {
       console.log('Header mapping:', { numeroColIndex, testColIndices });
 
       // Load cells for all rows (including header)
-      const maxRow = 100; // Adjust based on actual sheet size
+      const maxRow = 300; // Adjust based on actual sheet size
       await sheet.loadCells(`A1:Z${maxRow}`);
 
       console.log(`Loaded cells, looking for ${authorsInfo.length} students`);
