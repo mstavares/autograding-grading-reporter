@@ -1,4 +1,4 @@
-const { GetRow } = require('../sheets/spreadsheet')
+const { GetRow, GetWorksheet } = require('../sheets/spreadsheet')
 
 exports.Auth = async (authors, callback) => {
   try {
@@ -21,7 +21,7 @@ exports.Auth = async (authors, callback) => {
       return
     } else if (rowsFound.length == authors.length) {
       console.log("vou validar a pertença do repositorio")
-      for (const numero of rowsFound.map(row => row.numero)) {
+      for (const numero of rowsFound.map(row => row.get('numero'))) {
         console.log(`A validar ${numero}`)
         if (!authors.includes(numero)) {
           callback.failure(`Erro a autenticar ${numero}`)
@@ -39,44 +39,56 @@ exports.Auth = async (authors, callback) => {
   }
 }
 
-const getRepositoryInstances = (repositoryId) => {
-  return new Promise((resolve, reject) => {
-    GetRow(
-      process.env.SPREADSHEET_ID,
-      process.env.WORKSHEET_NAME,
-      { title: 'repositorio', instance: repositoryId },
-      {
-        success: (found) => resolve(found),
-        failure: (error) => reject(error)
-      }
-    )
-  })
+const getRepositoryInstances = async (repositoryId) => {
+  return await GetRow(
+    process.env.SPREADSHEET_ID,
+    process.env.WORKSHEET_NAME,
+    { title: 'repositorio', instance: repositoryId }
+  );
 }
 
 const insertRepositoryIdForAuthors = async (repositoryId, authors) => {
+  const sheet = await GetWorksheet(
+    process.env.SPREADSHEET_ID,
+    process.env.WORKSHEET_NAME
+  );
+
+  await sheet.loadHeaderRow();
+  const repositorioColIndex = sheet.headerValues.indexOf('repositorio');
+
+  if (repositorioColIndex === -1) {
+    throw new Error('Column "repositorio" not found in sheet');
+  }
+
+  const maxRow = 1000;
+  await sheet.loadCells(`A1:Z${maxRow}`);
+
   for (const author of authors) {
     try {
-      const info = await getAuthorInfo(author)
-      console.log(`info: ${info.numero} - ${info.nome}`)
-      info.repositorio = repositoryId
-      await info.save()
+      const info = await getAuthorInfo(author);
+      console.log(`info: ${info.get('numero')} - ${info.get('nome')}`);
+
+      const rowIndex = info._rowNumber - 1;
+      const cell = sheet.getCell(rowIndex, repositorioColIndex);
+      cell.value = repositoryId;
     } catch (err) {
-      console.error(err)
-      //callback.failure(err);
+      console.error(err);
     }
   }
+
+  await sheet.saveUpdatedCells();
 }
 
-const getAuthorInfo = (author) => {
-  return new Promise((resolve, reject) => {
-    GetRow(
-      process.env.SPREADSHEET_ID,
-      process.env.WORKSHEET_NAME,
-      { title: 'numero', instance: author },
-      {
-        success: (found) => found[0] ? resolve(found[0]) : reject(`Nao encontrei o author: ${author}`),
-        failure: (error) => reject(error)
-      }
-    )
-  })
+const getAuthorInfo = async (author) => {
+  const found = await GetRow(
+    process.env.SPREADSHEET_ID,
+    process.env.WORKSHEET_NAME,
+    { title: 'numero', instance: author }
+  );
+
+  if (!found[0]) {
+    throw new Error(`Nao encontrei o author: ${author}`);
+  }
+
+  return found[0];
 }

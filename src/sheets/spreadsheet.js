@@ -1,4 +1,5 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
+const { GoogleAuth } = require('google-auth-library');
 
 const creds = JSON.parse(
   Buffer.from(process.env.SHEETS_CREDENTIALS, "base64").toString("utf8")
@@ -6,65 +7,51 @@ const creds = JSON.parse(
 
 creds.private_key = creds.private_key.replace(/\\n/g, "\n")
 
-exports.GetSpreadsheet = (spreadSheetId, callback) => {
-  callback.sucess(GoogleSpreadsheet(spreadSheetId))
+async function getAuth() {
+  const auth = new GoogleAuth({
+    credentials: creds,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+  });
+  return auth;
 }
 
-exports.GetAllWorksheets = (spreadsheetId, callback) => {
-  const spreadsheet = new GoogleSpreadsheet(spreadsheetId)
+// Legacy callback-based functions - no longer used
+// exports.GetSpreadsheet = (spreadSheetId, callback) => {
+//   callback.sucess(GoogleSpreadsheet(spreadSheetId))
+// }
 
-  spreadsheet.useServiceAccountAuth(creds, function (err) {
-    if (err) {
-      callback.failure(err)
-      return
-    }
-
-    spreadsheet.getInfo((err, info) => {
-      if (err) {
-        callback.failure(err)
-        return
-      }
-
-      if (info && info.worksheets) {
-        callback.success(info.worksheets)
-      } else {
-        callback.failure('Erro na folha de configurações')
-      }
-    })
-  })
+exports.GetAllWorksheets = async (spreadsheetId) => {
+  const auth = await getAuth();
+  const spreadsheet = new GoogleSpreadsheet(spreadsheetId, { auth });
+  await spreadsheet.loadInfo();
+  return spreadsheet.sheetsByIndex;
 }
 
-exports.GetWorksheet = (spreadsheetId, worksheetTitle, callback) => {
-  (async function() {
-    const spreadsheet = new GoogleSpreadsheet(spreadsheetId)
-    await spreadsheet.useServiceAccountAuth(creds)
-    await spreadsheet.loadInfo();
-    if(spreadsheet) {
-      const foundSheet = spreadsheet.sheetsByIndex.find(sheet => sheet.title.toLowerCase() === worksheetTitle.toLowerCase())  
-      if(foundSheet) callback.success(foundSheet); else callback.failure('Folha ' + worksheetTitle + ' não encontrada')
-    } else {
-      console.log(`ERRO!! ${spreadsheet}, ${worksheetTitle}`)
-    }
-  }());
+exports.GetWorksheet = async (spreadsheetId, worksheetTitle) => {
+  const auth = await getAuth();
+  const spreadsheet = new GoogleSpreadsheet(spreadsheetId, { auth });
+  await spreadsheet.loadInfo();
+
+  const foundSheet = spreadsheet.sheetsByIndex.find(
+    sheet => sheet.title.toLowerCase() === worksheetTitle.toLowerCase()
+  );
+
+  if (!foundSheet) {
+    throw new Error('Folha ' + worksheetTitle + ' não encontrada');
+  }
+
+  return foundSheet;
 }
 
-exports.AddRows = (spreadsheet, worksheetTitle, data, callback) => {
-  this.GetWorksheet(spreadsheet, worksheetTitle, {
-    success: (sheet) => callback.result(sheet.addRows(data)),
-    failure: (err) => callback.failure(err)
-  })
+exports.AddRows = async (spreadsheet, worksheetTitle, data) => {
+  const sheet = await this.GetWorksheet(spreadsheet, worksheetTitle);
+  return await sheet.addRows(data);
 }
 
-exports.GetAllRows = (spreadsheetId, worksheetTitle, callback) => {
-  this.GetWorksheet(spreadsheetId, worksheetTitle, {
-    success: (worksheet) => {
-      (async function() {
-        const rows = await worksheet.getRows({ offset: 0 })
-        if(rows) callback.success(rows); else callback.failure(err)
-      }());
-    },
-    failure: (err) => callback.failure(err)
-  })
+exports.GetAllRows = async (spreadsheetId, worksheetTitle) => {
+  const worksheet = await this.GetWorksheet(spreadsheetId, worksheetTitle);
+  const rows = await worksheet.getRows({ offset: 0 });
+  return rows;
 }
 
 /*
@@ -79,15 +66,11 @@ exports.GetRow = (spreadSheetId, worksheetTitle, criteria, callback) => {
 }
 */
 
-exports.GetRow = (spreadSheetId, worksheetTitle, criteria, callback) => {
-  this.GetAllRows(spreadSheetId, worksheetTitle, {
-    success: (rows) => {
-      const rowsFound = rows.filter(
-        row => row[criteria.title] && row[criteria.title].toLowerCase() === criteria.instance.toString().toLowerCase()
-      )
-      callback.success(rowsFound)
-      // TODO lidar com o facto de nao encontrar registos
-    },
-    failure: (err) => callback.failure(err)
-  })
+exports.GetRow = async (spreadSheetId, worksheetTitle, criteria) => {
+  const rows = await this.GetAllRows(spreadSheetId, worksheetTitle);
+  const rowsFound = rows.filter(
+    row => row.get(criteria.title) &&
+           row.get(criteria.title).toLowerCase() === criteria.instance.toString().toLowerCase()
+  );
+  return rowsFound;
 }
