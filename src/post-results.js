@@ -28,25 +28,67 @@ exports.PostResults = async function PostResults(runnerResults) {
       await sheet.loadHeaderRow();
       const headers = sheet.headerValues;
 
-      const maxRow = authorsInfo.length + 100;
+      // Find column indices for student number and test columns
+      const numeroColIndex = headers.indexOf('numero');
+      const testColIndices = {};
+      testResults.forEach(test => {
+        const colIndex = headers.indexOf(test.testName);
+        if (colIndex !== -1) {
+          testColIndices[test.testName] = colIndex;
+        }
+      });
+
+      console.log('Header mapping:', { numeroColIndex, testColIndices });
+
+      // Load cells for all rows (including header)
+      const maxRow = 100; // Adjust based on actual sheet size
       await sheet.loadCells(`A1:Z${maxRow}`);
 
+      console.log(`Loaded cells, looking for ${authorsInfo.length} students`);
+
+      // For each author, find their row and update test scores
       for (const info of authorsInfo) {
+        const studentNumber = info.get('numero');
         const currentTotal = info.get('total');
-        if (currentTotal && currentTotal > totalScore) continue;
 
-        const rowIndex = info._rowNumber - 1;
+        console.log(`Processing student ${studentNumber}, current total: ${currentTotal}`);
 
+        if (currentTotal && currentTotal > totalScore) {
+          console.log(`Skipping ${studentNumber} - current total ${currentTotal} > ${totalScore}`);
+          continue;
+        }
+
+        // Find the row index by scanning the numero column
+        let rowIndex = -1;
+        for (let r = 1; r < maxRow; r++) { // Start at 1 to skip header
+          const cell = sheet.getCell(r, numeroColIndex);
+          if (cell.value == studentNumber) {
+            rowIndex = r;
+            break;
+          }
+        }
+
+        if (rowIndex === -1) {
+          console.error(`Could not find row for student ${studentNumber}`);
+          continue;
+        }
+
+        console.log(`Found student ${studentNumber} at row ${rowIndex + 1}`);
+
+        // Update test score cells
         testResults.forEach(test => {
-          const colIndex = headers.indexOf(test.testName);
-          if (colIndex !== -1) {
+          const colIndex = testColIndices[test.testName];
+          if (colIndex !== undefined) {
             const cell = sheet.getCell(rowIndex, colIndex);
+            console.log(`Setting ${test.testName} (col ${colIndex}) = ${test.score}`);
             cell.value = test.score;
           }
         });
       }
 
+      console.log('Saving updated cells...');
       await sheet.saveUpdatedCells();
+      console.log('✅ Cells saved successfully');
     },
     failure: (error) => {
       console.error(error)
